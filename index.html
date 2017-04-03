@@ -1,0 +1,190 @@
+<html>
+
+<head>
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+    crossorigin="anonymous">
+
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
+    crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+    crossorigin="anonymous"></script>
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+   <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" style="padding-top:5px; padding-bottom:5px; padding-left:0; height:inherit" href="#">
+        <img alt="Brand"  src="logo.png">
+      </a>
+    </div>
+  </div>
+</nav>
+  <div class="container">
+    
+    <div class="page-header">
+      <h1>Test Login<small> for FileMaker 16 Server</small></h1>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <p class="lead">
+          You can use this page to test OAuth and regular login to a FileMaker Server, using fms-login.
+        </p>
+      </div>
+    </div>
+    <div style="height:50px"></div>
+    <div class="row">
+      <div class="col-md-5">
+        
+        <p>
+          Fill out the form to the right, and press "Go Login". You will be taken to your FileMaker Server's login page, where you can log in.'
+        </p>
+        <div style="height:30px"></div>
+        <div class="alert alert-warning" role="alert">
+          <strong>Please Note!</strong>
+          <p style="padding-top:10px">The the tokens, and username, and passwords will be displayed on this page after a successfull login.</p>
+          <p style="padding-top:10px">This page is for testing, development and educational purposes. Thats why we just display the results. In a normal
+            production web site you would <strong>never</strong> do it this way.</p>
+        </div>
+
+      </div>
+      <div class="col-md-1"></div>
+      <div class="col-md-6">
+        <div id='loginForm' style='display:none'>
+
+          <form>
+            <div class="form-group">
+              <label for="server">Path to Login Page:</label>
+              <input onkeyup="handleFormChange()" type="text" class="form-control" id="server" placeholder="https://your-fm-server/fmi/rest/login">
+            </div>
+            <div class="form-group">
+              <label for="database">Database</label>
+              <input onkeyup="handleFormChange()" type="text" id="database" class="form-control" placeholder="YourFile.fmp12">
+            </div>
+            <div class="form-group">
+              <label for="layout">Layout</label>
+              <input onkeyup="handleFormChange()" type="text" id="layout" class="form-control" placeholder="Contacts">
+            </div>
+            <div class="form-group">
+              <label for="layout">Redirect Url</label>
+              <textarea readonly id="redirectURL" class="form-control" style='min-height:100'></textarea>
+            </div>
+          </form>
+          <button id='loginButton' type="button" class="btn btn-primary">Go Login</button>
+        </div>
+
+        <div id='responseTable' style='display:none'>
+          <h2>Login Results
+            <h2/>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>name</th>
+                  <th>value</th>
+                </tr>
+              </thead>
+              <tbody id="responseRows">
+              </tbody>
+            </table>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+  <script>
+          
+
+var loginForm = function() {
+  var url = $("#server").val().trim();
+  var database = $("#database").val().trim();
+  var layout = $("#layout").val().trim();
+  return {
+    valid: url && database && layout,
+    data: {
+      url: url,
+      database: database,
+      layout: layout
+    }
+  };
+};
+
+var setButtonEnableState = function() {
+  var loginButton = $("#loginButton");
+  if (loginForm().valid) {
+    loginButton.prop("disabled", false);
+  } else {
+    loginButton.prop("disabled", true);
+  }
+};
+
+var getLoginURL = function() {
+  var callBack = location.href;
+  var data = loginForm().data;
+  var url = data.url + "?database=" + encodeURIComponent(data.database);
+  url = url + "&layout=" + encodeURIComponent(data.layout);
+  url = url + "&callBack=" + encodeURIComponent(callBack);
+  return url;
+};
+
+var handleFormChange = function() {
+  if (loginForm().valid) {
+    $("#redirectURL").val(getLoginURL());
+  }
+  setButtonEnableState();
+};
+
+
+var queryString = function() {
+  var query_string = {};
+  var query = window.location.search.substring(1);
+  var vars = query.split("&");
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split("=");
+    // If first entry with this name
+    if (typeof query_string[pair[0]] === "undefined") {
+      query_string[pair[0]] = decodeURIComponent(pair[1]);
+      // If second entry with this name
+    } else if (typeof query_string[pair[0]] === "string") {
+      var arr = [query_string[pair[0]], decodeURIComponent(pair[1])];
+      query_string[pair[0]] = arr;
+      // If third or later entry with this name
+    } else {
+      query_string[pair[0]].push(decodeURIComponent(pair[1]));
+    }
+  }
+  return query_string;
+};
+
+var handleLogin = function() {
+  location.href = getLoginURL()
+};
+
+//kick it off
+$(window).load(function() {
+  var query = queryString();
+
+  if (!query.authType) {
+    // first load
+    setButtonEnableState();
+    $("#loginButton").on("click", handleLogin);
+    $("#loginForm").show();
+  } else {
+    // coming back from authentication
+    var rows = "";
+    Object.keys(query).map(function(q) {
+      rows = rows + "<tr><td>" + q + "</td><td>" + query[q] + "</td></tr>";
+    });
+    $("#responseRows").html(rows);
+    $("#responseTable").show();
+  }
+});               
+  </script>
+</body>
+
+</html>
